@@ -1,17 +1,15 @@
 <script>
 import { h, ref, onMounted, defineComponent } from 'vue'
-import { chartJsEventNames, generateEventObject, generateChartJsEventListener } from './includes'
-import { Chart, registerables } from 'chart.js'
-
-// registerables is undefined when using UMD
-// using chart.js via UMD already includes registerables
-if (registerables !== undefined) {
-  Chart.register(...registerables)
-}
+import { Chart } from 'frappe-charts';
 
 const Vue3Charts = defineComponent({
   name: 'Vue3Charts',
   props: {
+    title: {
+      type: String,
+      required: true,
+      default: ''
+    },
     type: {
       type: String,
       required: true
@@ -26,6 +24,16 @@ const Vue3Charts = defineComponent({
       required: false,
       default: null
     },
+    isNavigable: {
+      type: Number,
+      required: false,
+      default: 0
+    },
+    xUnit: {
+      type: Number,
+      required: false,
+      default: 1
+    },
     data: {
       type: Object,
       required: true
@@ -34,28 +42,16 @@ const Vue3Charts = defineComponent({
       type: Object,
       default: () => ({})
     },
-    plugins: {
+    colors: {
       type: Array,
       default: () => []
     }
   },
-  emits: chartJsEventNames,
   setup (props, { emit }) {
     const chartRef = ref(null)
 
-    //generate chart.js plugin to emit lib events
-    const chartJsEventsPlugin = chartJsEventNames
-        .reduce((reduced, eventType) => {
-          const event = generateEventObject(eventType, chartRef)
-          return { ...reduced, ...generateChartJsEventListener(emit, event) }
-        }, { id: 'Vue3ChartsEventHookPlugin' })
-
     const chartJSState = {
       chart: null,
-      plugins: [
-        chartJsEventsPlugin,
-        ...props.plugins
-      ],
       props: { ...props }
     }
 
@@ -80,11 +76,15 @@ const Vue3Charts = defineComponent({
       }
 
       return chartJSState.chart = new Chart(
-          chartRef.value.getContext('2d'), {
+          "#chartRef", {
+            title: chartJSState.props.title,
             type: chartJSState.props.type,
             data: chartJSState.props.data,
-            options: chartJSState.props.options,
-            plugins: chartJSState.plugins
+            height: chartJSState.props.height,
+            colors: chartJSState.props.colors,
+            isNavigable: chartJSState.props.isNavigable,
+            xUnit: chartJSState.props.xUnit,
+            // plugins: chartJSState.plugins
           }
       )
     }
@@ -102,7 +102,8 @@ const Vue3Charts = defineComponent({
   },
 
   render (props) {
-    return h('canvas', {
+    return h('div', {
+      id: 'chartRef',
       ref: 'chartRef',
       height: props.height,
       width: props.width

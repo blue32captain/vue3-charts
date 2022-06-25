@@ -1,3 +1,5 @@
+import { defineComponent, ref, onMounted, h } from "vue";
+import { Chart } from "frappe-charts";
 var __defProp = Object.defineProperty;
 var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
@@ -14,60 +16,14 @@ var __spreadValues = (a, b) => {
     }
   return a;
 };
-import { defineComponent, ref, onMounted, h } from "vue";
-import { registerables, Chart } from "chart.js";
-const chartJsEventNames = [
-  "install",
-  "start",
-  "stop",
-  "beforeInit",
-  "afterInit",
-  "beforeUpdate",
-  "afterUpdate",
-  "beforeElementsUpdate",
-  "reset",
-  "beforeDatasetsUpdate",
-  "afterDatasetsUpdate",
-  "beforeDatasetUpdate",
-  "afterDatasetUpdate",
-  "beforeLayout",
-  "afterLayout",
-  "afterLayout",
-  "beforeRender",
-  "afterRender",
-  "resize",
-  "destroy",
-  "uninstall",
-  "afterTooltipDraw",
-  "beforeTooltipDraw"
-];
-function generateEventObject(type, chartRef = null) {
-  return {
-    type,
-    chartRef,
-    preventDefault() {
-      this._defaultPrevented = true;
-    },
-    isDefaultPrevented() {
-      return !this._defaultPrevented;
-    },
-    _defaultPrevented: false
-  };
-}
-function generateChartJsEventListener(emit, event) {
-  return {
-    [event.type]: () => {
-      emit(event.type, event);
-      return event.isDefaultPrevented();
-    }
-  };
-}
-if (registerables !== void 0) {
-  Chart.register(...registerables);
-}
 const Vue3Charts = defineComponent({
   name: "Vue3Charts",
   props: {
+    title: {
+      type: String,
+      required: true,
+      default: ""
+    },
     type: {
       type: String,
       required: true
@@ -82,6 +38,16 @@ const Vue3Charts = defineComponent({
       required: false,
       default: null
     },
+    isNavigable: {
+      type: Number,
+      required: false,
+      default: 0
+    },
+    xUnit: {
+      type: Number,
+      required: false,
+      default: 1
+    },
     data: {
       type: Object,
       required: true
@@ -90,24 +56,19 @@ const Vue3Charts = defineComponent({
       type: Object,
       default: () => ({})
     },
+    colors: {
+      type: Array,
+      default: () => []
+    },
     plugins: {
       type: Array,
       default: () => []
     }
   },
-  emits: chartJsEventNames,
   setup(props, { emit }) {
     const chartRef = ref(null);
-    const chartJsEventsPlugin = chartJsEventNames.reduce((reduced, eventType) => {
-      const event = generateEventObject(eventType, chartRef);
-      return __spreadValues(__spreadValues({}, reduced), generateChartJsEventListener(emit, event));
-    }, { id: "Vue3ChartsEventHookPlugin" });
     const chartJSState = {
       chart: null,
-      plugins: [
-        chartJsEventsPlugin,
-        ...props.plugins
-      ],
       props: __spreadValues({}, props)
     };
     const destroy = () => {
@@ -126,11 +87,14 @@ const Vue3Charts = defineComponent({
       if (chartJSState.chart) {
         return chartJSState.chart.update();
       }
-      return chartJSState.chart = new Chart(chartRef.value.getContext("2d"), {
+      return chartJSState.chart = new Chart("#chartRef", {
+        title: chartJSState.props.title,
         type: chartJSState.props.type,
         data: chartJSState.props.data,
-        options: chartJSState.props.options,
-        plugins: chartJSState.plugins
+        height: chartJSState.props.height,
+        colors: chartJSState.props.colors,
+        isNavigable: chartJSState.props.isNavigable,
+        xUnit: chartJSState.props.xUnit
       });
     };
     onMounted(() => render());
@@ -144,7 +108,8 @@ const Vue3Charts = defineComponent({
     };
   },
   render(props) {
-    return h("canvas", {
+    return h("div", {
+      id: "chartRef",
       ref: "chartRef",
       height: props.height,
       width: props.width
@@ -152,9 +117,6 @@ const Vue3Charts = defineComponent({
   }
 });
 const _sfc_main = Vue3Charts;
-_sfc_main.registerGlobalPlugins = (plugins) => {
-  Chart.register(...plugins);
-};
 _sfc_main.install = (app, options = {}) => {
   var _a;
   app.component(_sfc_main.name, _sfc_main);

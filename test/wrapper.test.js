@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { Chart } from 'chart.js'
 import Vue3Charts from '../lib/main'
 import { createApp } from 'vue'
-import { getDoughnutProps } from './chart.props'
+import { getCandleProps } from './chart.props'
 import { chartJsEventNames, generateEventObject, generateChartJsEventListener } from '../lib/includes'
 
 const factory = function (props) {
@@ -12,8 +12,8 @@ const factory = function (props) {
   })
 }
 
-jest.mock('chart.js', () => {
-  const Chart = jest.requireActual('chart.js')
+jest.mock('frappe-charts', () => {
+  const Chart = jest.requireActual('frappe-charts')
   return {
     ...Chart,
     registerables: []
@@ -36,28 +36,28 @@ describe('init', () => {
   })
 
   it('ChartJS instance is accessible', () => {
-    const wrapper = factory(getDoughnutProps())
+    const wrapper = factory(getCandleProps())
     expect(wrapper.vm.chartJSState.chart).toBeTruthy()
   })
 
   it('defaults options to empty object', () => {
-    const doughnutProps = getDoughnutProps()
-    delete doughnutProps.options
-    const wrapper = factory(doughnutProps)
+    const candleProps = getCandleProps()
+    delete candleProps.options
+    const wrapper = factory(candleProps)
     expect(wrapper.props().options).toMatchObject({})
   })
 
   it('defaults plugins to empty array', () => {
-    const doughnutProps = getDoughnutProps()
-    delete doughnutProps.plugins
-    const wrapper = factory(doughnutProps)
+    const candleProps = getCandleProps()
+    delete candleProps.plugins
+    const wrapper = factory(candleProps)
     expect(wrapper.props().plugins).toEqual([])
   })
 })
 
 describe('chart dimensions', () => {
   it('it sets fixed height and width', async () => {
-    const props = getDoughnutProps()
+    const props = getCandleProps()
     props.options.responsive = false
     props.width = props.height = 800
     const wrapper = factory(props)
@@ -69,7 +69,7 @@ describe('chart dimensions', () => {
 
 describe('chart reloading', () => {
   it('reloads if already exists', async () => {
-    const wrapper = factory(getDoughnutProps())
+    const wrapper = factory(getCandleProps())
     wrapper.vm.render()
     expect(wrapper.emitted('afterInit')).toHaveLength(1)
     wrapper.vm.render()
@@ -80,7 +80,7 @@ describe('chart reloading', () => {
 
 describe('component methods', () => {
   it('destroys if chart exists', async () => {
-    const wrapper = factory(getDoughnutProps())
+    const wrapper = factory(getCandleProps())
     expect(wrapper.vm.chartJSState.chart).toBeTruthy()
     wrapper.vm.destroy()
     expect(wrapper.vm.chartJSState.chart).toBeFalsy()
@@ -90,24 +90,24 @@ describe('component methods', () => {
   })
 
   it('updates data', async () => {
-    const doughnutProps = getDoughnutProps()
-    const wrapper = factory(doughnutProps)
+    const candleProps = getCandleProps()
+    const wrapper = factory(candleProps)
     const chart = wrapper.vm.chartJSState.chart
     expect(wrapper.emitted('afterInit')).toHaveLength(1)
-    expect(chart.data.datasets[0].data).toEqual(doughnutProps.data.datasets[0].data)
-    doughnutProps.data.datasets[0].data = [1, 2, 3, 4]
+    expect(chart.data.datasets[0].data).toEqual(candleProps.data.datasets[0].data)
+    candleProps.data.datasets[0].data = [1, 2, 3, 4]
     wrapper.vm.update()
     expect(wrapper.emitted('afterUpdate')).toHaveLength(1)
-    expect(chart.data.datasets[0].data).toEqual(doughnutProps.data.datasets[0].data)
+    expect(chart.data.datasets[0].data).toEqual(candleProps.data.datasets[0].data)
   })
 
   it('updates options', () => {
-    const doughnutProps = getDoughnutProps()
-    const wrapper = factory(doughnutProps)
+    const candleProps = getCandleProps()
+    const wrapper = factory(candleProps)
     const chart = wrapper.vm.chartJSState.chart
     expect(wrapper.emitted('afterInit')).toHaveLength(1)
     expect(chart.options.plugins.title.display).toBeFalsy()
-    doughnutProps.options.plugins.title = {
+    candleProps.options.plugins.title = {
       text: 'Updated',
       display: true
     }
@@ -156,28 +156,28 @@ describe('emitted events', () => {
     .filter((eventName) => !skipEvents.includes(eventName))
     .forEach((eventName, index) => {
       it(`emits ${eventName} events`, () => {
-        const wrapper = factory(getDoughnutProps())
+        const wrapper = factory(getCandleProps())
         wrapper.vm.render()
         expect(wrapper.emitted(eventName)).toBeTruthy()
       })
     })
 
   it('emits resize event', () => {
-    const wrapper = factory(getDoughnutProps())
+    const wrapper = factory(getCandleProps())
     wrapper.vm.render()
     wrapper.vm.resize()
     expect(wrapper.emitted('resize')).toHaveLength(1)
   })
 
   it('emits reset event', () => {
-    const wrapper = factory(getDoughnutProps())
+    const wrapper = factory(getCandleProps())
     wrapper.vm.render()
     wrapper.vm.chartJSState.chart.reset()
     expect(wrapper.emitted('reset')).toBeTruthy()
   })
 
   it('emits destroy, uninstall, stop events', () => {
-    const wrapper = factory(getDoughnutProps())
+    const wrapper = factory(getCandleProps())
     wrapper.vm.render()
     wrapper.vm.destroy()
     expect(wrapper.emitted('destroy')).toHaveLength(1)
@@ -186,7 +186,7 @@ describe('emitted events', () => {
   })
 
   it('emits render events', () => {
-    const wrapper = factory(getDoughnutProps())
+    const wrapper = factory(getCandleProps())
     wrapper.vm.render()
     expect(wrapper.emitted()).toHaveProperty('beforeRender')
     // event working but not available during test run with chart.js 3.7
